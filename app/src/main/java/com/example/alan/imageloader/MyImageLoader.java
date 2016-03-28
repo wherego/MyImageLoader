@@ -47,7 +47,7 @@ public class MyImageLoader {
 
     //todo 记得修改
     private static final int TAG_KEY_URI = 0;
-    private static final long DISK_CACHE_SIZE = 1024 *10224 * 50;
+    private static final long DISK_CACHE_SIZE = 1024 * 1024 * 50;
     private static final int IO_BUFFER_SIZE = 8 * 1024;
     private static final int DISK_CACHE_INDEX = 0;
     private boolean mIsDiskLruCacheCreated = false;
@@ -220,7 +220,7 @@ public class MyImageLoader {
             FileInputStream fileInputStream = (FileInputStream) snapshot
                     .getInputStream(DISK_CACHE_INDEX);
             FileDescriptor fileDescriptor = fileInputStream.getFD();
-            bitmap = mImageResizer .decodeSampledBitmapFromFileDescriptor(fileDescriptor,
+            bitmap = mImageResizer.decodeSampledBitmapFromFileDescriptor(fileDescriptor,
                     reqWidth, reqHeight);
             if (bitmap != null) {
                 addBitmapToMemoryCache(key,bitmap);
