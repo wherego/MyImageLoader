@@ -46,7 +46,6 @@ public class MyImageLoader {
     private static final long KEEP_ALIVE = 10L;
 
     //todo 记得修改
-    private static final int TAG_KEY_URI = 0;
     private static final long DISK_CACHE_SIZE = 1024 * 1024 * 50;
     private static final int IO_BUFFER_SIZE = 8 * 1024;
     private static final int DISK_CACHE_INDEX = 0;
@@ -72,7 +71,7 @@ public class MyImageLoader {
             ImageView imageView = result.imageView;
             //todo:优化
             imageView.setImageBitmap(result.bitmap);
-            String uri = (String) imageView.getTag(TAG_KEY_URI);
+            String uri = (String) imageView.getTag(R.string.TAG_KEY_URI);
             if (uri.equals(result.uri)) {
                 imageView.setImageBitmap(result.bitmap);
             } else {
@@ -130,13 +129,14 @@ public class MyImageLoader {
 
     public void bindBitmap(final String uri, final ImageView imageView, final int reqWidth,
                            final int reqHeight) {
-        imageView.setTag(TAG_KEY_URI,uri);
+        imageView.setTag(R.string.TAG_KEY_URI,uri);
         Bitmap bitmap = loadBitmapFromMemCache(uri);
         if (bitmap != null) {
             imageView.setImageBitmap(bitmap);
+            Log.d(TAG, "loadBitmapFromMemCache,url:" + uri);
             return;
         }
-
+        Log.i(TAG,"MemCache not hit");
         final Runnable loadBitmapTask = new Runnable(){
             @Override
             public void run() {
@@ -160,6 +160,7 @@ public class MyImageLoader {
         try {
             bitmap = loadBitmapFromDiskCache(uri, reqWidth, reqHeight);
             if (bitmap != null) {
+                Log.d(TAG,"loadBitmapFromDiskCache,url:" + uri);
                 return bitmap;
             }
             bitmap = loadBitmapFromHttp(uri, reqWidth, reqHeight);
