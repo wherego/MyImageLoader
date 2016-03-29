@@ -85,7 +85,8 @@ public class MyImageLoader {
 
     private Context mContext;
     private ImageResizer mImageResizer = new ImageResizer();
-    private LruCache<String, Bitmap> mMemoryCache;
+    //private LruCache<String, Bitmap> mMemoryCache;
+    private LIRSCache mMemoryCache;
     private LruCache<String, byte[]> mUnloadMemoryCache;
     private DiskLruCache mdiskLruCache;
 
@@ -95,12 +96,13 @@ public class MyImageLoader {
         int cacheSize = maxMemory / 8;
         Log.i(TAG,"cacheMemory:" + cacheSize + "KB");
 
-        mMemoryCache = new LruCache<String, Bitmap>(cacheSize * 3) {
-            @Override
-            protected int sizeOf(String key, Bitmap value) {
-                return value.getRowBytes() * value.getHeight() / 1024;
-            }
-        };
+//        mMemoryCache = new LruCache<String, Bitmap>(cacheSize * 3) {
+//            @Override
+//            protected int sizeOf(String key, Bitmap value) {
+//                return value.getRowBytes() * value.getHeight() / 1024;
+//            }
+//        };
+        mMemoryCache = new LIRSCache();
 
         mUnloadMemoryCache = new LruCache<String, byte[]>(cacheSize) {
             @Override
