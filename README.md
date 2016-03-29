@@ -2,7 +2,6 @@
 [![Build Status](https://travis-ci.org/WrongChao/MyImageLoader.svg?branch=master)](https://travis-ci.org/WrongChao/MyImageLoade)
 
 ## 简介
-----
 
 三级缓存图片加载器,分别由文件缓存、内存未解码图片缓存，内存Bitmap缓存三部分构成。
 
@@ -17,7 +16,6 @@
 内存Bitmap缓存中的对象都是可以直接使用的bitmap对象。
 
 ## 工作原理
----
 
 1. 当用户请求一个image时，首先在主线程中通过其url直接检索Bitmap缓存，如果缓存命中，则返回Bitmap。
 2. 如果Bitmap缓存未命中，则将请求向下层缓存分配.
@@ -27,6 +25,6 @@
 - 若DiskLRUCache未命中，则从网络上请求资源，得到资源后更新三个缓存，并发送msg至looper，将bitmap设置给ImageView。
 
 ## Demo
----
+
 例子中我用了50个图片作测试，图片链接来自百度图片，侵删。
 例子中还包括对GridView加载图片作的优化（当view滑动速度过快时停止加载），有效解决了卡顿问题。
