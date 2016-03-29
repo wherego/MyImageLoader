@@ -60,6 +60,7 @@ public class MyImageLoader {
         }
     };
 
+    //创建线程池。参数与AsycnTask的THREAD_POOL_EXECUTOR线程池相同。
     public static final Executor THREAD_POOL_EXECUTOR = new ThreadPoolExecutor(CORE_POOL_SIZE,
             MAXIMUM_POOL_SIZE,KEEP_ALIVE, TimeUnit.SECONDS,
             new LinkedBlockingQueue<Runnable>(),sThreadFactory);
@@ -70,8 +71,10 @@ public class MyImageLoader {
             LoaderResult result = (LoaderResult) msg.obj;
             ImageView imageView = result.imageView;
 
-            //imageView.setImageBitmap(result.bitmap);
             String uri = (String) imageView.getTag(R.string.TAG_KEY_URI);
+            //判断view是否已经被复用。试想如下场景：当listView滑动过快，导致当前item的view还未来得及
+            //设置bitmap，就已经滑出屏幕，并且又被listView重利用为另一个item的view，如果不处理这样的
+            //情况就会发生item错位的问题，因此在内存加载完bitmap后还要检查一下该view是否已经被复用。
             if (uri.equals(result.uri)) {
                 imageView.setImageBitmap(result.bitmap);
             } else {
