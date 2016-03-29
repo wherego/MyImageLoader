@@ -166,7 +166,7 @@ public class MyImageLoader {
         if (bitmap != null) {
             imageView.setImageBitmap(bitmap);
             Log.d(TAG, "loadBitmapFromMemCache,url:" + uri);
-            Log.i(TAG, "bitmap size: " + bitmap.getRowBytes() * bitmap.getHeight() / 1024 + " KB");
+            //Log.i(TAG, "bitmap size: " + bitmap.getRowBytes() * bitmap.getHeight() / 1024 + " KB");
             return;
         }
         //如果MemLRU未命中

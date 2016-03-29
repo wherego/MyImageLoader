@@ -14,6 +14,7 @@ import android.support.v4.view.VelocityTrackerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
@@ -95,7 +96,8 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class ImageAdapter extends BaseAdapter implements View.OnTouchListener, AbsListView.OnScrollListener{
+    private class ImageAdapter extends BaseAdapter
+            implements View.OnTouchListener, AbsListView.OnScrollListener{
         private VelocityTracker velocityTracker;
         private boolean isGridTooSlow = true;
         private boolean isGridIdle = true;
@@ -125,7 +127,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+        public void onScroll(AbsListView view, int firstVisibleItem,
+                             int visibleItemCount, int totalItemCount) {
 
         }
 
@@ -155,7 +158,8 @@ public class MainActivity extends AppCompatActivity {
         public View getView(int position, View convertView, ViewGroup parent) {
             ViewHolder viewHolder = null;
             if (convertView == null) {
-                convertView = getLayoutInflater().inflate(R.layout.item_grid, parent, false);
+                convertView = LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.item_grid, parent, false);
                 viewHolder = new ViewHolder();
                 viewHolder.imageView = (ImageView) convertView.findViewById(R.id.imvItem);
                 convertView.setTag(viewHolder);
@@ -167,7 +171,8 @@ public class MainActivity extends AppCompatActivity {
             final String uri = getItem(position);
             if (!uri.equals(tag)) {
                 //set default image before finish load.
-                imageView.setImageDrawable(Resources.getSystem().getDrawable(android.R.drawable.ic_menu_gallery));
+                imageView.setImageDrawable(Resources.getSystem()
+                        .getDrawable(android.R.drawable.ic_menu_gallery));
             }
             imageView.setTag(uri);
             int pxHeight = getResources().getDimensionPixelSize(R.dimen.bitmap_height);
