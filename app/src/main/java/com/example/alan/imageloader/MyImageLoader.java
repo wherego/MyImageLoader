@@ -16,6 +16,7 @@ import android.widget.ImageView;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -83,6 +84,7 @@ public class MyImageLoader {
     private Context mContext;
     private ImageResizer mImageResizer = new ImageResizer();
     private LruCache<String, Bitmap> mMemoryCache;
+    private LruCache<String, byte[]> mUnloadMemoryCache;
     private DiskLruCache mdiskLruCache;
 
     private MyImageLoader(Context context) {
@@ -93,6 +95,12 @@ public class MyImageLoader {
             @Override
             protected int sizeOf(String key, Bitmap value) {
                 return value.getRowBytes() * value.getHeight() / 1024;
+            }
+        };
+        mUnloadMemoryCache = new LruCache<String, byte[]>(cacheSize) {
+            @Override
+            protected int sizeOf(String key, byte[] value) {
+                return value.length / 1024;
             }
         };
         File diskCacheDir = getDiskCacheDir(mContext, "bitmap");
@@ -123,6 +131,22 @@ public class MyImageLoader {
         return mMemoryCache.get(key);
     }
 
+    private void addByteToUnloadMemoryCache(String key, Bitmap bitmap) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+        mUnloadMemoryCache.put(key, out.toByteArray());
+        Util.closeQuietly(out);
+
+    }
+
+    private Bitmap getBitmapFromUnloadMemCache(String key) {
+        byte[] pic = mUnloadMemoryCache.get(key);
+        if (pic == null) {
+            return null;
+        }
+        return BitmapFactory.decodeByteArray(pic,0,pic.length);
+    }
+
     public void bindBitmap(final String uri, final ImageView imageView) {
         bindBitmap(uri,imageView, 0, 0);
     }
@@ -131,11 +155,13 @@ public class MyImageLoader {
                            final int reqHeight) {
         imageView.setTag(R.string.TAG_KEY_URI,uri);
         Bitmap bitmap = loadBitmapFromMemCache(uri);
+        //如果MemLRU命中
         if (bitmap != null) {
             imageView.setImageBitmap(bitmap);
             Log.d(TAG, "loadBitmapFromMemCache,url:" + uri);
             return;
         }
+        //如果MemLRU未命中
         Log.i(TAG,"MemCache not hit");
         final Runnable loadBitmapTask = new Runnable(){
             @Override
@@ -152,13 +178,22 @@ public class MyImageLoader {
 
     public Bitmap loadBitmap(String uri, int reqWidth, int reqHeight) {
         Bitmap bitmap = loadBitmapFromMemCache(uri);
+        //再次检查：如果MemLRU命中
         if (bitmap != null) {
             Log.d(TAG,"loadBitmapFromMemCache,url:" + uri);
             return bitmap;
         }
 
+        bitmap = loadBitmapFromUnloadMenCache(uri);
+        //如果UnloadLRU命中
+        if (bitmap != null) {
+            Log.d(TAG, "loadBitmapFromUnLoadMemCache,url:" + uri);
+            return bitmap;
+        }
+
         try {
             bitmap = loadBitmapFromDiskCache(uri, reqWidth, reqHeight);
+            //如果DiskLRU命中
             if (bitmap != null) {
                 Log.d(TAG,"loadBitmapFromDiskCache,url:" + uri);
                 return bitmap;
@@ -177,10 +212,16 @@ public class MyImageLoader {
 
         return bitmap;
     }
+
     private Bitmap loadBitmapFromMemCache(String uri) {
         final String key = hashKeyFromUrl(uri);
-        Bitmap bitmap = getBitmapFromMemCache(uri);
+        Bitmap bitmap = getBitmapFromMemCache(key);
         return bitmap;
+    }
+
+    private Bitmap loadBitmapFromUnloadMenCache(String uri) {
+        final String key = hashKeyFromUrl(uri);
+        return getBitmapFromUnloadMemCache(key);
     }
 
     private Bitmap loadBitmapFromHttp(String url, int reqWidth, int reqHeight) throws IOException {
@@ -191,6 +232,7 @@ public class MyImageLoader {
             return null;
         }
 
+        //添加进DiskLRU
         String key = hashKeyFromUrl(url);
         DiskLruCache.Editor editor = mdiskLruCache.edit(key);
         if (editor != null) {
@@ -224,7 +266,10 @@ public class MyImageLoader {
             bitmap = mImageResizer.decodeSampledBitmapFromFileDescriptor(fileDescriptor,
                     reqWidth, reqHeight);
             if (bitmap != null) {
-                addBitmapToMemoryCache(key,bitmap);
+                //添加进UnloadMemLRU
+                addByteToUnloadMemoryCache(key, bitmap);
+                //添加进MemLRU
+                addBitmapToMemoryCache(key, bitmap);
             }
         }
 

@@ -1,7 +1,10 @@
 package com.example.alan.imageloader;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -121,11 +124,12 @@ public class MainActivity extends AppCompatActivity {
             final String tag = (String) imageView.getTag();
             final String uri = getItem(position);
             if (!uri.equals(tag)) {
-                //todo : set default image before finish load.
-                imageView.setImageDrawable(null);
+                //set default image before finish load.
+                imageView.setImageDrawable(Resources.getSystem().getDrawable(android.R.drawable.ic_menu_gallery));
             }
             imageView.setTag(uri);
-            imageLoader.bindBitmap(uri, imageView);
+            int pxHeight = getResources().getDimensionPixelSize(R.dimen.bitmap_height);
+            imageLoader.bindBitmap(uri, imageView, (int) (pxHeight * 1.5), pxHeight);
             return convertView;
         }
 

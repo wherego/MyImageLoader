@@ -3,6 +3,7 @@ package com.example.alan.imageloader;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 
 import java.io.FileDescriptor;
 
@@ -29,8 +30,9 @@ public class ImageResizer {
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFileDescriptor(fd, null, options);
 
-        options.inSampleSize = calculateInSampleSize(options,  reqWidth, reqHeight);
-
+        int size = calculateInSampleSize(options,  reqWidth, reqHeight);
+        options.inSampleSize = size;
+        Log.i(TAG, "Resize Image:" + size);
         options.inJustDecodeBounds = false;
         return BitmapFactory.decodeFileDescriptor(fd, null, options);
     }
@@ -49,6 +51,8 @@ public class ImageResizer {
 
         final int height = options.outHeight;
         final int width = options.outWidth;
+        Log.i(TAG, "Image witdh:" + width + " Image height:" + height
+                + " reqWidth:" + reqWidth + "reqHeight:" + reqHeight);
         int inSampleSize = 1;
 
         if (height > reqHeight || width > reqWidth) {
