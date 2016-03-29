@@ -46,7 +46,6 @@ public class MyImageLoader {
     private static final int MAXIMUM_POOL_SIZE = CPU_COUNT * 2 + 1;
     private static final long KEEP_ALIVE = 10L;
 
-    //todo 记得修改
     private static final long DISK_CACHE_SIZE = 1024 * 1024 * 50;
     private static final int IO_BUFFER_SIZE = 8 * 1024;
     private static final int DISK_CACHE_INDEX = 0;
@@ -70,13 +69,13 @@ public class MyImageLoader {
         public void handleMessage(Message msg) {
             LoaderResult result = (LoaderResult) msg.obj;
             ImageView imageView = result.imageView;
-            //todo:优化
-            imageView.setImageBitmap(result.bitmap);
+
+            //imageView.setImageBitmap(result.bitmap);
             String uri = (String) imageView.getTag(R.string.TAG_KEY_URI);
             if (uri.equals(result.uri)) {
                 imageView.setImageBitmap(result.bitmap);
             } else {
-                Log.w(TAG,"set image bitmap, but url has changed,ignored!");
+                Log.w(TAG,"url has changed,ignored!");
             }
         }
     };
@@ -91,22 +90,27 @@ public class MyImageLoader {
         mContext = context.getApplicationContext();
         int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
         int cacheSize = maxMemory / 8;
+        Log.i(TAG,"cacheMemory:" + cacheSize + "KB");
+
         mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
             @Override
             protected int sizeOf(String key, Bitmap value) {
                 return value.getRowBytes() * value.getHeight() / 1024;
             }
         };
+
         mUnloadMemoryCache = new LruCache<String, byte[]>(cacheSize) {
             @Override
             protected int sizeOf(String key, byte[] value) {
                 return value.length / 1024;
             }
         };
+
         File diskCacheDir = getDiskCacheDir(mContext, "bitmap");
         if (!diskCacheDir.exists()) {
             diskCacheDir.mkdir();
         }
+
         if (getUsableSpace(diskCacheDir) > DISK_CACHE_SIZE) {
             try {
                 mdiskLruCache = DiskLruCache.open(diskCacheDir,1,1,DISK_CACHE_SIZE);
@@ -134,8 +138,11 @@ public class MyImageLoader {
     private void addByteToUnloadMemoryCache(String key, Bitmap bitmap) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-        mUnloadMemoryCache.put(key, out.toByteArray());
+        byte[] pic = out.toByteArray();
+        mUnloadMemoryCache.put(key, pic);
         Util.closeQuietly(out);
+
+        Log.i(TAG,"Unload size: " + pic.length + " bytes");
 
     }
 
@@ -148,7 +155,7 @@ public class MyImageLoader {
     }
 
     public void bindBitmap(final String uri, final ImageView imageView) {
-        bindBitmap(uri,imageView, 0, 0);
+        bindBitmap(uri, imageView, 0, 0);
     }
 
     public void bindBitmap(final String uri, final ImageView imageView, final int reqWidth,
@@ -159,10 +166,10 @@ public class MyImageLoader {
         if (bitmap != null) {
             imageView.setImageBitmap(bitmap);
             Log.d(TAG, "loadBitmapFromMemCache,url:" + uri);
+            Log.i(TAG, "bitmap size: " + bitmap.getRowBytes() * bitmap.getHeight() / 1024 + " KB");
             return;
         }
         //如果MemLRU未命中
-        Log.i(TAG,"MemCache not hit");
         final Runnable loadBitmapTask = new Runnable(){
             @Override
             public void run() {
@@ -221,7 +228,12 @@ public class MyImageLoader {
 
     private Bitmap loadBitmapFromUnloadMenCache(String uri) {
         final String key = hashKeyFromUrl(uri);
-        return getBitmapFromUnloadMemCache(key);
+        Bitmap bitmap = getBitmapFromUnloadMemCache(key);
+        //添加进MemLRU
+        if (bitmap != null) {
+            addBitmapToMemoryCache(key, bitmap);
+        }
+        return bitmap;
     }
 
     private Bitmap loadBitmapFromHttp(String url, int reqWidth, int reqHeight) throws IOException {

@@ -10,12 +10,17 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.VelocityTrackerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -23,6 +28,7 @@ import android.widget.ImageView;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     private final static String urlPic = "http://img2.3lian.com/2014/f2/110/d/";
     private MyImageLoader imageLoader = null;
 
@@ -50,7 +56,10 @@ public class MainActivity extends AppCompatActivity {
                 needToReq.toArray(new String[needToReq.size()]), 1);
 
         GridView gridView = (GridView) findViewById(R.id.gridView);
-        gridView.setAdapter(new ImageAdapter());
+        ImageAdapter imageAdapter = new ImageAdapter();
+        gridView.setAdapter(imageAdapter);
+        gridView.setOnTouchListener(imageAdapter);
+        gridView.setOnScrollListener(imageAdapter);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -86,7 +95,40 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class ImageAdapter extends BaseAdapter {
+    private class ImageAdapter extends BaseAdapter implements View.OnTouchListener, AbsListView.OnScrollListener{
+        private VelocityTracker velocityTracker;
+        private boolean isGridTooSlow = true;
+        private boolean isGridIdle = true;
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            velocityTracker.addMovement(event);
+            velocityTracker.computeCurrentVelocity(1000);
+            float yVelocity = velocityTracker.getYVelocity();
+            if (Math.abs(yVelocity) < 5000 || !event.equals(MotionEvent.ACTION_UP)) {
+                isGridTooSlow = true;
+            } else {
+                isGridTooSlow = false;
+            }
+            return false;
+        }
+
+        @Override
+        public void onScrollStateChanged(AbsListView view, int scrollState) {
+            if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
+                isGridIdle = true;
+                notifyDataSetChanged();
+                Log.i(TAG, "onScrollChanged: SCROLL_STATE_IDLE");
+            } else {
+                isGridIdle = false;
+            }
+        }
+
+        @Override
+        public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+
+        }
+
         class ViewHolder {
             public ImageView imageView;
 
@@ -129,12 +171,15 @@ public class MainActivity extends AppCompatActivity {
             }
             imageView.setTag(uri);
             int pxHeight = getResources().getDimensionPixelSize(R.dimen.bitmap_height);
-            imageLoader.bindBitmap(uri, imageView, (int) (pxHeight * 1.5), pxHeight);
+            if (isGridTooSlow || isGridIdle) {
+                imageLoader.bindBitmap(uri, imageView, (int) (pxHeight * 1.5), pxHeight);
+            }
             return convertView;
         }
 
         public ImageAdapter() {
             super();
+            velocityTracker = VelocityTracker.obtain();
             for(int i = 0; i < 50; i++) {
                mUrList.add(urlPic + (i + 1) + ".jpg" );
             }
