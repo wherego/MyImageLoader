@@ -175,7 +175,7 @@ public class MyImageLoader {
             //Log.i(TAG, "bitmap size: " + bitmap.getRowBytes() * bitmap.getHeight() / 1024 + " KB");
             return;
         }
-        //如果MemLRU未命中
+
         final Runnable loadBitmapTask = new Runnable(){
             @Override
             public void run() {
@@ -197,7 +197,7 @@ public class MyImageLoader {
             return bitmap;
         }
 
-        bitmap = loadBitmapFromUnloadMenCache(uri);
+        bitmap = loadBitmapFromUnloadMemCache(uri);
         //如果UnloadLRU命中
         if (bitmap != null) {
             Log.d(TAG, "loadBitmapFromUnLoadMemCache,url:" + uri);
@@ -232,7 +232,7 @@ public class MyImageLoader {
         return bitmap;
     }
 
-    private Bitmap loadBitmapFromUnloadMenCache(String uri) {
+    private Bitmap loadBitmapFromUnloadMemCache(String uri) {
         final String key = hashKeyFromUrl(uri);
         Bitmap bitmap = getBitmapFromUnloadMemCache(key);
         //添加进MemLRU
