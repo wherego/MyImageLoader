@@ -178,8 +178,10 @@ public class MainActivity extends AppCompatActivity {
                         .getDrawable(android.R.drawable.ic_menu_gallery));
             }
 
-            //如果imageView的uri与要设置给它的uri相同，说明imageview已经正确设置了这个图片，所以不需要再请求获
-            //取资源，直接返回convertView即可。这样避免了不必要的View的重新请求设置bitmap导致的性能开销。
+            //由于在onScrollStateChanged方法中调用了notifyDataSetChanged，所以在此做一些优化。
+            //如果imageView的uri与要设置给它的uri相同，说明imageview已经正确设置了这个图片，所以不
+            //需要再请求获取资源，直接返回convertView即可。这样避免了不必要的View的重新请求设置
+            // bitmap导致的性能开销。
             String uriTag = (String) imageView.getTag();
             if (uriTag != null && uriTag.equals(uri)){
                 return convertView;
