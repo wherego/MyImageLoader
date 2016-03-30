@@ -33,6 +33,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 /**
  * Created by alan on 2016/3/15.
  */
@@ -295,13 +300,44 @@ public class MyImageLoader {
     }
 
     public boolean downloadUrlToStream(String urlString, OutputStream outputStream) {
-        HttpURLConnection urlConnection = null;
+        //HttpURLConnection urlConnection = null;
+        OkHttpClient client = null;
+        Request request = null;
         BufferedOutputStream out = null;
         BufferedInputStream in = null;
+//        try {
+//            final URL url = new URL(urlString);
+//            urlConnection = (HttpURLConnection) url.openConnection();
+//            in = new BufferedInputStream(urlConnection.getInputStream(),IO_BUFFER_SIZE);
+//            out = new BufferedOutputStream(outputStream, IO_BUFFER_SIZE);
+//
+//            int b;
+//            while((b = in.read()) != -1) {
+//                out.write(b);
+//            }
+//            return true;
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } finally {
+//            if (urlConnection != null) {
+//                urlConnection.disconnect();
+//            }
+//            Util.closeQuietly(out);
+//            Util.closeQuietly(in);
+//        }
+
+        //okhttp
         try {
-            final URL url = new URL(urlString);
-            urlConnection = (HttpURLConnection) url.openConnection();
-            in = new BufferedInputStream(urlConnection.getInputStream(),IO_BUFFER_SIZE);
+            client = new OkHttpClient();
+            request = new Request.Builder()
+                    .url(urlString)
+                    .build();
+
+            Response response = client.newCall(request).execute();
+            if (!response.isSuccessful())
+                throw new IOException("Unexpected code " + response);
+
+            in = new BufferedInputStream(response.body().byteStream(), IO_BUFFER_SIZE);
             out = new BufferedOutputStream(outputStream, IO_BUFFER_SIZE);
 
             int b;
@@ -309,12 +345,10 @@ public class MyImageLoader {
                 out.write(b);
             }
             return true;
+
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (urlConnection != null) {
-                urlConnection.disconnect();
-            }
             Util.closeQuietly(out);
             Util.closeQuietly(in);
         }
@@ -323,20 +357,42 @@ public class MyImageLoader {
 
     private Bitmap downloadBitmapFromUrl(String urlString) {
         Bitmap bitmap = null;
-        HttpURLConnection urlConnection = null;
+        //HttpURLConnection urlConnection = null;
         BufferedInputStream in = null;
+        OkHttpClient client = null;
+        Request request = null;
 
+//        try {
+//            final URL url = new URL(urlString);
+//            urlConnection = (HttpURLConnection) url.openConnection();
+//            in = new BufferedInputStream(urlConnection.getInputStream(), IO_BUFFER_SIZE);
+//            bitmap = BitmapFactory.decodeStream(in);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } finally {
+//            if (urlConnection != null) {
+//                urlConnection.disconnect();
+//            }
+//            Util.closeQuietly(in);
+//        }
+
+        //okhttp
         try {
-            final URL url = new URL(urlString);
-            urlConnection = (HttpURLConnection) url.openConnection();
-            in = new BufferedInputStream(urlConnection.getInputStream(), IO_BUFFER_SIZE);
+            client = new OkHttpClient();
+            request = new Request.Builder()
+                    .url(urlString)
+                    .build();
+
+            Response response = client.newCall(request).execute();
+            if (!response.isSuccessful())
+                throw new IOException("Unexpected code " + response);
+
+            in = new BufferedInputStream(response.body().byteStream(), IO_BUFFER_SIZE);
             bitmap = BitmapFactory.decodeStream(in);
+
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (urlConnection != null) {
-                urlConnection.disconnect();
-            }
             Util.closeQuietly(in);
         }
         return bitmap;
