@@ -23,6 +23,7 @@ public class LIRSCache {
 
             @Override
             protected void entryRemoved(boolean evicted, String key, Bitmap oldValue, Bitmap newValue) {
+                //如果从L1中淘汰，则加入L2
                 if (evicted) {
                     L2.put(key, oldValue);
                 }

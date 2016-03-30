@@ -86,6 +86,7 @@ public class MyImageLoader {
     private Context mContext;
     private ImageResizer mImageResizer = new ImageResizer();
     //private LruCache<String, Bitmap> mMemoryCache;
+    //使用LIRS代替LRU
     private LIRSCache mMemoryCache;
     private LruCache<String, byte[]> mUnloadMemoryCache;
     private DiskLruCache mdiskLruCache;
@@ -147,7 +148,7 @@ public class MyImageLoader {
         mUnloadMemoryCache.put(key, pic);
         Util.closeQuietly(out);
 
-        Log.i(TAG,"Unload size: " + pic.length + " bytes");
+        Log.i(TAG,"Unload size: " + pic.length / 1024 + " KB");
 
     }
 

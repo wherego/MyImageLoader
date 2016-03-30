@@ -107,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
             velocityTracker.addMovement(event);
             velocityTracker.computeCurrentVelocity(1000);
             float yVelocity = velocityTracker.getYVelocity();
+            //当屏幕滚动的足够慢，或者用户的手还没有离开屏幕，则可以加载图片。否则不能加载。
             if (Math.abs(yVelocity) < 5000 || !event.equals(MotionEvent.ACTION_UP)) {
                 isGridTooSlow = true;
             } else {
@@ -117,8 +118,10 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onScrollStateChanged(AbsListView view, int scrollState) {
+            //当停止滚动，则可以加载图片。
             if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE) {
                 isGridIdle = true;
+                //通知更新界面。之前由于屏幕滑动过快等原因导致的view未加载图片，这些view将再次获得加载图片的机会。
                 notifyDataSetChanged();
                 Log.i(TAG, "onScrollChanged: SCROLL_STATE_IDLE");
             } else {
@@ -174,9 +177,18 @@ public class MainActivity extends AppCompatActivity {
                 imageView.setImageDrawable(Resources.getSystem()
                         .getDrawable(android.R.drawable.ic_menu_gallery));
             }
-            imageView.setTag(uri);
+
+            //如果imageView的uri与要设置给它的uri相同，说明imageview已经正确设置了这个图片，所以不需要再请求获
+            //取资源，直接返回convertView即可。这样避免了不必要的View的重新请求设置bitmap导致的性能开销。
+            String uriTag = (String) imageView.getTag();
+            if (uriTag != null && uriTag.equals(uri)){
+                return convertView;
+            }
+
             int pxHeight = getResources().getDimensionPixelSize(R.dimen.bitmap_height);
+            //如果屏幕滚动地足够慢，或者屏幕停止了滚动，则加载图片。
             if (isGridTooSlow || isGridIdle) {
+                imageView.setTag(uri);
                 imageLoader.bindBitmap(uri, imageView, (int) (pxHeight * 1.5), pxHeight);
             }
             return convertView;

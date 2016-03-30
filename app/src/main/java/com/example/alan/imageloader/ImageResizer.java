@@ -18,11 +18,13 @@ public class ImageResizer {
     }
 
     /**
-     *
-     * @param fd
-     * @param reqWidth
-     * @param reqHeight
-     * @return
+     * 从文件描述符解码bitmap。首先会检测图片大小和所请求的长宽之间的差别，
+     * 得出一个适当的缩放比例后({@link #calculateInSampleSize(BitmapFactory.Options, int, int)})，
+     * 将缩放后的bitmap返回。
+     * @param fd FileDescriptor of the image.
+     * @param reqWidth 0 if we donnot wanna resize the image.
+     * @param reqHeight 0 if we donnot wanna resize the image.
+     * @return Bitmap which has been resized.
      */
     public Bitmap decodeSampledBitmapFromFileDescriptor(FileDescriptor fd, int reqWidth,
                                                         int reqHeight) {
