@@ -30,7 +30,7 @@ public class LIRSCache {
             }
         };
 
-        L2 = new LruCache<String, Bitmap>(cacheSize * 1) {
+        L2 = new LruCache<String, Bitmap>(cacheSize) {
             @Override
             protected int sizeOf(String key, Bitmap value) {
                 return value.getRowBytes() * value.getHeight() / 1024;
