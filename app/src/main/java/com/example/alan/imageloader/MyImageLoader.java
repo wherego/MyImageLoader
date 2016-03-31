@@ -165,6 +165,7 @@ public class MyImageLoader {
         return BitmapFactory.decodeByteArray(pic,0,pic.length);
     }
 
+
     public void bindBitmap(final String uri, final ImageView imageView) {
         bindBitmap(uri, imageView, 0, 0);
     }
@@ -185,7 +186,7 @@ public class MyImageLoader {
             @Override
             public void run() {
                 Bitmap bitmap = loadBitmap(uri, reqWidth, reqHeight);
-                if (bitmap != null) {
+                if (bitmap != null ) {
                     LoaderResult result = new LoaderResult(imageView, uri, bitmap);
                     mMainHandler.obtainMessage(MESSAGE_POST_RESULT, result).sendToTarget();
                 }

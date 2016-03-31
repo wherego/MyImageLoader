@@ -14,6 +14,7 @@ public class LIRSCache {
     public LIRSCache() {
         int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
         int cacheSize = maxMemory / 8;
+        Log.i(TAG, "cacheSize: " + cacheSize);
 
         L1 = new LruCache<String, Bitmap>(cacheSize * 2) {
             @Override
@@ -30,7 +31,7 @@ public class LIRSCache {
             }
         };
 
-        L2 = new LruCache<String, Bitmap>(cacheSize) {
+        L2 = new LruCache<String, Bitmap>(cacheSize * 2) {
             @Override
             protected int sizeOf(String key, Bitmap value) {
                 return value.getRowBytes() * value.getHeight() / 1024;
@@ -56,12 +57,12 @@ public class LIRSCache {
         if ((bitmap = L2.get(key)) == null) {
             bitmap = L1.get(key);
             if (bitmap != null) {
-                Log.i(TAG, "LIRS L1 hit");
+                Log.i(TAG, "LIRS L1 hit,L1 free size: " + (L1.maxSize() - L1.size()));
             }
             return bitmap;
         } else {
             L1.put(key, bitmap);
-            Log.i(TAG, "LIRS L2 hit");
+            Log.i(TAG, "LIRS L2 hit,L2 free size: " + (L2.maxSize() - L2.size()));
             return L2.remove(key);
         }
     }
