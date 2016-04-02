@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
@@ -166,13 +167,14 @@ public class MyImageLoader {
     }
 
 
-    public void bindBitmap(final String uri, final ImageView imageView) {
+    public void bindBitmap(final Uri uri, final ImageView imageView) {
         bindBitmap(uri, imageView, 0, 0);
     }
 
-    public void bindBitmap(final String uri, final ImageView imageView, final int reqWidth,
+    public void bindBitmap(final Uri uriPara, final ImageView imageView, final int reqWidth,
                            final int reqHeight) {
-        imageView.setTag(R.string.TAG_KEY_URI,uri);
+        final String uri = uriPara.toString();
+        imageView.setTag(R.string.TAG_KEY_URI, uri);
         Bitmap bitmap = loadBitmapFromMemCache(uri);
         //如果MemLRU命中
         if (bitmap != null) {
@@ -182,20 +184,24 @@ public class MyImageLoader {
             return;
         }
 
-        final Runnable loadBitmapTask = new Runnable(){
+        final Runnable loadBitmapTask = new Runnable() {
             @Override
             public void run() {
-                Bitmap bitmap = loadBitmap(uri, reqWidth, reqHeight);
-                if (bitmap != null ) {
+                Bitmap bitmap = loadBitmap(uriPara, reqWidth, reqHeight);
+                if (bitmap != null) {
                     LoaderResult result = new LoaderResult(imageView, uri, bitmap);
                     mMainHandler.obtainMessage(MESSAGE_POST_RESULT, result).sendToTarget();
                 }
             }
         };
         THREAD_POOL_EXECUTOR.execute(loadBitmapTask);
+
     }
 
-    public Bitmap loadBitmap(String uri, int reqWidth, int reqHeight) {
+    public Bitmap loadBitmap(Uri uriPara, int reqWidth, int reqHeight) {
+        String uri = uriPara.toString();
+        String uriScheme = uriPara.getScheme();
+
         Bitmap bitmap = loadBitmapFromMemCache(uri);
         //再次检查：如果MemLRU命中
         if (bitmap != null) {
@@ -210,25 +216,38 @@ public class MyImageLoader {
             return bitmap;
         }
 
-        try {
-            bitmap = loadBitmapFromDiskCache(uri, reqWidth, reqHeight);
-            //如果DiskLRU命中
-            if (bitmap != null) {
-                Log.d(TAG,"loadBitmapFromDiskCache,url:" + uri);
-                return bitmap;
+        if (uriScheme.contains("http")) {
+            try {
+                bitmap = loadBitmapFromDiskCache(uri, reqWidth, reqHeight);
+                //如果DiskLRU命中
+                if (bitmap != null) {
+                    Log.d(TAG, "loadBitmapFromDiskCache,url:" + uri);
+                    return bitmap;
+                }
+                bitmap = loadBitmapFromHttp(uri, reqWidth, reqHeight);
+                Log.d(TAG, "loadBitmapFromHttp,url:" + uri);
+
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            bitmap = loadBitmapFromHttp(uri, reqWidth, reqHeight);
-            Log.d(TAG,"loadBitmapFromHttp,url:" + uri);
 
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (bitmap == null && !mIsDiskLruCacheCreated) {
+                Log.w(TAG, "encounter error, DiskLruCache is not created.");
+                bitmap = downloadBitmapFromUrl(uri);
+            }
+        } else if (uriScheme.contains("file")) {
+
+        } else if (uriScheme.contains("content")) {
+
+        } else if (uriScheme.contains("asset")) {
+
+        } else if (uriScheme.contains("res")) {
+            try {
+                bitmap = loadBitmapFromRes(uriPara, reqWidth, reqHeight);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
         }
-
-        if (bitmap == null && !mIsDiskLruCacheCreated) {
-            Log.w(TAG,"encounter error, DiskLruCache is not created.");
-            bitmap = downloadBitmapFromUrl(uri);
-        }
-
         return bitmap;
     }
 
@@ -297,6 +316,20 @@ public class MyImageLoader {
             }
         }
 
+        return bitmap;
+    }
+
+    public Bitmap loadBitmapFromRes(Uri uriPara, int reqWidth, int reqHeight) {
+        int id = Integer.parseInt(uriPara.getPath().substring(1));
+        String uri = uriPara.toString();
+        Bitmap bitmap = null;
+
+        bitmap = mImageResizer
+                .decodeSampledBitmapFromResource(mContext.getResources(), id, reqWidth, reqHeight);
+        if (bitmap != null) {
+            addByteToUnloadMemoryCache(uri.toString(), bitmap);
+            addBitmapToMemoryCache(uri, bitmap);
+        }
         return bitmap;
     }
 

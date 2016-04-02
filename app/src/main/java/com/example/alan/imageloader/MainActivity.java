@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -191,7 +192,7 @@ public class MainActivity extends AppCompatActivity {
             //如果屏幕滚动地足够慢，或者屏幕停止了滚动，则加载图片。
             if (isGridTooSlow || isGridIdle) {
                 imageView.setTag(uri);
-                imageLoader.bindBitmap(uri, imageView, (int) (pxHeight * 1.5), pxHeight);
+                imageLoader.bindBitmap(Uri.parse(uri), imageView, (int) (pxHeight * 1.5), pxHeight);
             }
             return convertView;
         }
@@ -202,6 +203,8 @@ public class MainActivity extends AppCompatActivity {
             for(int i = 0; i < 50; i++) {
                mUrList.add(urlPic + (i + 1) + ".jpg" );
             }
+            mUrList.add("res:///" + R.mipmap.ic_launcher);
+
         }
 
     }
