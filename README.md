@@ -35,8 +35,7 @@
 如果没松开，则加载图片。如果松开，则检测滑动速度，如果速度过大，则不加载图片。同时监听onScrollStateChanged事件，如果停止
 滑动，则加载图片。
 
-加载图片时，检查imageView是否事先就已加载好，若是，则不加载。这样可以避免因调用notifyDataSetChanged而导致的一些
-本来已经加载好的View的重复加载。　
+加载图片时，检查imageView是否事先就已加载好，若是，则不加载。这样可以避免因调用notifyDataSetChanged而导致的一些本来已经加载好的View的重复加载。　
 
 ## 后期计划
 
