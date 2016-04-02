@@ -22,8 +22,18 @@
 目前只支持两种URI，后期将会增加对大部分URI的支持。
 
 URI支持列表：
-- http
-- res
+
+| 资源类型|scheme |demo|目前是否支持|
+| :----- | :------:|:---:|
+|网络资源|http|"http://www.XX.com/1.jpg"|是|
+|res资源|res|“res://(任意字符串，可为空)/” + R.mipmap.ic_launcher|是|
+|本地图片|file|file://(任意字符串，可为空)/1.jpg"|否|
+|asset资源|asset|"asset://(任意字符串，可为空)/1.jpg"|否|
+|Content Provider|content|URI格式为标准格式|否
+
+
+
+
 
 ## 工作原理
 
