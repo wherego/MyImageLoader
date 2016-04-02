@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import java.io.FileDescriptor;
+import java.io.InputStream;
 
 /**
  * Created by alan on 2016/3/15.
@@ -39,6 +40,41 @@ public class ImageResizer {
         return BitmapFactory.decodeFileDescriptor(fd, null, options);
     }
 
+
+
+    /**
+     *
+     * @param res
+     * @param resId
+     * @param reqWidth
+     * @param reqHeight
+     * @return
+     */
+    public Bitmap decodeSampledBitmapFromResource(Resources res, int resId, int reqWidth,
+                                                  int reqHeight) {
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeResource(res, resId, options);
+
+        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+
+        options.inJustDecodeBounds = false;
+        return BitmapFactory.decodeResource(res, resId, options);
+    }
+
+    public Bitmap decodeSampledBitmapFromInputStream(InputStream inputStream,
+                                                     int reqWidth, int reqHeight) {
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeStream(inputStream, null, options);
+
+        int size = calculateInSampleSize(options,  reqWidth, reqHeight);
+        options.inSampleSize = size;
+        Log.i(TAG, "Resize Image:" + size);
+        options.inJustDecodeBounds = false;
+        return  BitmapFactory.decodeStream(inputStream, null, options);
+    }
+
     /**
      *
      * @param options
@@ -67,26 +103,6 @@ public class ImageResizer {
             }
         }
         return inSampleSize;
-    }
-
-    /**
-     *
-     * @param res
-     * @param resId
-     * @param reqWidth
-     * @param reqHeight
-     * @return
-     */
-    public Bitmap decodeSampledBitmapFromResource(Resources res, int resId, int reqWidth,
-                                                  int reqHeight) {
-        final BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeResource(res, resId, options);
-
-        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
-
-        options.inJustDecodeBounds = false;
-        return BitmapFactory.decodeResource(res, resId, options);
     }
 }
 

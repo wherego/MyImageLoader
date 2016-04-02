@@ -24,8 +24,8 @@
 :-:|:-:|:-:|:-:
 网络资源|http|标准url格式|是
 res资源|res|“res://(任意字符串，可为空)/” + R.mipmap.ic_launcher|是
-|本地图片|file|file://(任意字符串，可为空)/1.jpg"|否|
-|asset资源|asset|"asset://(任意字符串，可为空)/1.jpg"|否|
+|本地图片|file|file://(任意字符串，可为空)/1.jpg"|是|
+|asset资源|asset|"asset://(任意字符串，可为空)/1.jpg"|是|
 |Content Provider|content|标准uri格式|否
 
 

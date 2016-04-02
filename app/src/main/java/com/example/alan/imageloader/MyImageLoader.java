@@ -2,6 +2,7 @@ package com.example.alan.imageloader;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -21,7 +22,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -219,11 +222,11 @@ public class MyImageLoader {
         if (uriScheme.contains("http")) {
             try {
                 bitmap = loadBitmapFromDiskCache(uri, reqWidth, reqHeight);
-                //如果DiskLRU命中
                 if (bitmap != null) {
                     Log.d(TAG, "loadBitmapFromDiskCache,url:" + uri);
                     return bitmap;
                 }
+                //如果DiskLRU未命中，则在网络中请求资源
                 bitmap = loadBitmapFromHttp(uri, reqWidth, reqHeight);
                 Log.d(TAG, "loadBitmapFromHttp,url:" + uri);
 
@@ -236,17 +239,13 @@ public class MyImageLoader {
                 bitmap = downloadBitmapFromUrl(uri);
             }
         } else if (uriScheme.contains("file")) {
-
+            bitmap = loadBitmapFromFile(uriPara, reqWidth, reqHeight);
         } else if (uriScheme.contains("content")) {
-
+            //todo :
         } else if (uriScheme.contains("asset")) {
-
+            bitmap = loadBitmapFromAsset(uriPara, reqWidth, reqHeight);
         } else if (uriScheme.contains("res")) {
-            try {
-                bitmap = loadBitmapFromRes(uriPara, reqWidth, reqHeight);
-            } catch (NumberFormatException e) {
-                e.printStackTrace();
-            }
+            bitmap = loadBitmapFromRes(uriPara, reqWidth, reqHeight);
         }
         return bitmap;
     }
@@ -290,6 +289,48 @@ public class MyImageLoader {
         return loadBitmapFromDiskCache(url, reqWidth, reqHeight);
     }
 
+    private Bitmap loadBitmapFromFile(Uri uriPara,int reqWidth, int reqHeight) {
+        Bitmap bitmap = null;
+        String key = hashKeyFromUrl(uriPara.toString());
+        String path = uriPara.getPath();
+        File file = new File(path);
+        try {
+            FileInputStream fileInputStream = new FileInputStream(file);
+            FileDescriptor fileDescriptor = fileInputStream.getFD();
+            bitmap = mImageResizer.decodeSampledBitmapFromFileDescriptor(fileDescriptor,
+                    reqWidth, reqHeight);
+            if (bitmap != null) {
+                //添加进UnloadMemLRU
+                addByteToUnloadMemoryCache(key, bitmap);
+                //添加进MemLRU
+                addBitmapToMemoryCache(key, bitmap);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bitmap;
+    }
+
+    private Bitmap loadBitmapFromAsset(Uri uriPara, int reqWidth, int reqHeight){
+        Bitmap bitmap = null;
+        String key = hashKeyFromUrl(uriPara.toString());
+        String fileName = uriPara.getPath();
+        AssetManager assetManager = mContext.getAssets();
+        try {
+            InputStream inputStream = assetManager.open(fileName);
+            mImageResizer.decodeSampledBitmapFromInputStream(inputStream, reqWidth, reqHeight);
+            if (bitmap != null) {
+                //添加进UnloadMemLRU
+                addByteToUnloadMemoryCache(key, bitmap);
+                //添加进MemLRU
+                addBitmapToMemoryCache(key, bitmap);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bitmap;
+    }
+
     private Bitmap loadBitmapFromDiskCache(String url, int reqWidth, int reqHeight)
             throws IOException{
         if (Looper.myLooper() == Looper.getMainLooper()) {
@@ -316,19 +357,25 @@ public class MyImageLoader {
             }
         }
 
+
         return bitmap;
     }
 
     public Bitmap loadBitmapFromRes(Uri uriPara, int reqWidth, int reqHeight) {
-        int id = Integer.parseInt(uriPara.getPath().substring(1));
-        String uri = uriPara.toString();
         Bitmap bitmap = null;
-
-        bitmap = mImageResizer
-                .decodeSampledBitmapFromResource(mContext.getResources(), id, reqWidth, reqHeight);
-        if (bitmap != null) {
-            addByteToUnloadMemoryCache(uri.toString(), bitmap);
-            addBitmapToMemoryCache(uri, bitmap);
+        String uri = uriPara.toString();
+        String key = hashKeyFromUrl(uri);
+        try {
+            int id = Integer.parseInt(uriPara.getPath().substring(1));
+            bitmap = mImageResizer
+                    .decodeSampledBitmapFromResource(mContext.getResources(), id, reqWidth, reqHeight);
+            if (bitmap != null) {
+                addByteToUnloadMemoryCache(key, bitmap);
+                addBitmapToMemoryCache(key, bitmap);
+            }
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            bitmap = null;
         }
         return bitmap;
     }
